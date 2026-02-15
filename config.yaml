@@ -1,0 +1,4 @@
+machines:
+  jordi's pc: 10.0.0.30
+db_path: office-net.db
+subnet: 10.0.0
