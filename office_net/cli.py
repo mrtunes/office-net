@@ -166,7 +166,8 @@ def share(
     """Open a shared folder on a machine in Explorer."""
     cfg = config.load()
     ip = config.resolve_name(name_or_ip, cfg)
-    console.print(f"Opening [bold]\\\\{ip}\\{path}[/bold] ...")
+    unc = f"\\\\{ip}\\{path}" if path else f"\\\\{ip}"
+    console.print(f"Opening [bold]{unc}[/bold] ...", highlight=False)
     connect.open_share(ip, path)
 
 

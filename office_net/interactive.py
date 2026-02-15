@@ -202,7 +202,8 @@ def _do_connect(cfg: dict) -> None:
     elif action == "share":
         console.print("\nFolder path (leave blank for root share):")
         path = _prompt()
-        console.print(f"Opening [bold]\\\\{ip}\\{path}[/bold] ...")
+        unc = f"\\\\{ip}\\{path}" if path else f"\\\\{ip}"
+        console.print(f"\nOpening [bold]{unc}[/bold] ...", highlight=False)
         connect.open_share(ip, path)
 
 
