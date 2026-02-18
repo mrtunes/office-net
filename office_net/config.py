@@ -10,8 +10,9 @@ from typing import Optional
 
 import yaml
 
-# Config file lives next to the package (in the repo root)
-_DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
+# Config file: check env var, then repo root (for dev), then ~/.office-net/
+_REPO_CONFIG = Path(__file__).resolve().parent.parent / "config.yaml"
+_HOME_CONFIG = Path.home() / ".office-net" / "config.yaml"
 
 
 def _config_path() -> Path:
@@ -19,7 +20,11 @@ def _config_path() -> Path:
     env = os.environ.get("OFFICE_NET_CONFIG")
     if env:
         return Path(env)
-    return _DEFAULT_CONFIG_PATH
+    # Prefer repo-root config if it exists (dev / cloned repo)
+    if _REPO_CONFIG.exists():
+        return _REPO_CONFIG
+    # Otherwise use home directory
+    return _HOME_CONFIG
 
 
 def detect_local_ip() -> Optional[str]:

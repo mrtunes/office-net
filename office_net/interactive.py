@@ -116,12 +116,13 @@ def _host_table(hosts: list[scanner.Host], cfg: dict, title: str = "Scan Results
     table.add_column("IP", style="green")
     table.add_column("MAC", style="yellow")
     table.add_column("Hostname")
+    table.add_column("Type", style="magenta")
 
     for i, h in enumerate(hosts, 1):
         name = names.get(h.ip, "")
         if h.ip == local_ip:
             name = name or "(this PC)"
-        table.add_row(str(i), name, h.ip, h.mac or "-", h.hostname or "-")
+        table.add_row(str(i), name, h.ip, h.mac or "-", h.hostname or "-", h.device_type or "-")
     return table
 
 
@@ -194,6 +195,7 @@ def _do_connect(cfg: dict) -> None:
     action = _pick([
         ("rdp", "Remote Desktop (RDP)"),
         ("share", "Open shared folder"),
+        ("web", "Open web page"),
     ], title=f"Connect to {ip}")
 
     if action == "rdp":
@@ -205,6 +207,9 @@ def _do_connect(cfg: dict) -> None:
         unc = f"\\\\{ip}\\{path}" if path else f"\\\\{ip}"
         console.print(f"\nOpening [bold]{unc}[/bold] ...", highlight=False)
         connect.open_share(ip, path)
+    elif action == "web":
+        console.print(f"\nOpening [bold]http://{ip}[/bold] in browser ...")
+        connect.open_web(ip)
 
 
 def _do_ping(cfg: dict) -> None:
@@ -270,6 +275,25 @@ def _do_ping(cfg: dict) -> None:
         console.print(f"\nPinging [bold]{choice}[/bold] ...\n")
         output = connect.ping_host(choice)
         console.print(output)
+    _prompt("\nPress Enter to continue")
+
+
+def _do_ports(cfg: dict) -> None:
+    ip = _pick_machine(cfg)
+    if ip is None:
+        return
+
+    console.print(f"\nChecking ports on [bold]{ip}[/bold] ...\n")
+    results = scanner.check_ports(ip)
+
+    table = Table(title=f"Ports on {ip}")
+    table.add_column("Port", style="cyan", justify="right")
+    table.add_column("Service")
+    table.add_column("Status")
+    for port, service, is_open in results:
+        status = "[bold green]OPEN[/bold green]" if is_open else "[dim]closed[/dim]"
+        table.add_row(str(port), service, status)
+    console.print(table)
     _prompt("\nPress Enter to continue")
 
 
@@ -407,8 +431,9 @@ MAIN_MENU = [
     ("scan", "Scan the network"),
     ("diff", "Scan + show changes"),
     ("list", "View last scan results"),
-    ("connect", "Connect to a machine (RDP / shared folder)"),
+    ("connect", "Connect to a machine (RDP / shared folder / web)"),
     ("ping", "Ping"),
+    ("ports", "Port check"),
     ("wake", "Wake-on-LAN"),
     ("settings", "Settings (known machines)"),
     ("quit", "Exit"),
@@ -440,6 +465,8 @@ def run() -> None:
             _do_connect(cfg)
         elif choice == "ping":
             _do_ping(cfg)
+        elif choice == "ports":
+            _do_ports(cfg)
         elif choice == "wake":
             _do_wake(cfg)
         elif choice == "settings":

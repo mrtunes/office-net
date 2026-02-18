@@ -32,12 +32,13 @@ def _host_table(hosts: list[scanner.Host], cfg: dict, title: str = "Scan Results
     table.add_column("IP", style="green")
     table.add_column("MAC", style="yellow")
     table.add_column("Hostname")
+    table.add_column("Type", style="magenta")
 
     for h in hosts:
         name = names.get(h.ip, "")
         if h.ip == local_ip:
             name = name or "(this PC)"
-        table.add_row(name, h.ip, h.mac or "—", h.hostname or "—")
+        table.add_row(name, h.ip, h.mac or "—", h.hostname or "—", h.device_type or "—")
     return table
 
 
@@ -169,6 +170,40 @@ def share(
     unc = f"\\\\{ip}\\{path}" if path else f"\\\\{ip}"
     console.print(f"Opening [bold]{unc}[/bold] ...", highlight=False)
     connect.open_share(ip, path)
+
+
+# ---------------------------------------------------------------------------
+# open
+# ---------------------------------------------------------------------------
+
+@app.command(name="open")
+def open_cmd(name_or_ip: str = typer.Argument(..., help="Machine name or IP.")) -> None:
+    """Open a device's web admin page in the default browser."""
+    cfg = config.load()
+    ip = config.resolve_name(name_or_ip, cfg)
+    console.print(f"Opening [bold]http://{ip}[/bold] in browser ...")
+    connect.open_web(ip)
+
+
+# ---------------------------------------------------------------------------
+# ports
+# ---------------------------------------------------------------------------
+
+@app.command()
+def ports(name_or_ip: str = typer.Argument(..., help="Machine name or IP.")) -> None:
+    """Check common service ports on a machine."""
+    cfg = config.load()
+    ip = config.resolve_name(name_or_ip, cfg)
+    console.print(f"Checking ports on [bold]{ip}[/bold] ...\n")
+    results = scanner.check_ports(ip)
+    table = Table(title=f"Ports on {ip}")
+    table.add_column("Port", style="cyan", justify="right")
+    table.add_column("Service")
+    table.add_column("Status")
+    for port, service, is_open in results:
+        status = "[bold green]OPEN[/bold green]" if is_open else "[dim]closed[/dim]"
+        table.add_row(str(port), service, status)
+    console.print(table)
 
 
 # ---------------------------------------------------------------------------

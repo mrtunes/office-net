@@ -37,6 +37,14 @@ def ping_host(ip: str, count: int = 4) -> str:
         return f"Ping failed: {e}"
 
 
+def open_web(ip: str) -> None:
+    """Open the device's web admin page in the default browser."""
+    subprocess.Popen(
+        ["start", f"http://{ip}"],
+        shell=True,
+    )
+
+
 def send_wol(mac: str) -> None:
     """Send a Wake-on-LAN magic packet.
 
